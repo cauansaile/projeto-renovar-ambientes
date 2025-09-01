@@ -69,9 +69,7 @@ const HeroSection = () => {
     <section className="hero">
       <div className="overlay">
         <h1 className="title">Bem vindo ao Blog renovar</h1>
-        <p className="subtitle" style={{ textAlign: "center" }}>
-          Fique por dentro das últimas tendências do design e arquitetura
-        </p>
+        
       </div>
     </section>
   );
