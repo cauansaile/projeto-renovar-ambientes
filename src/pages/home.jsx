@@ -355,16 +355,11 @@ const RenovarAmbientes = () => {
           </div>
           <div className="text-sobre">
             <p>
-              Na nossa marcenaria, cada projeto é tratado como uma obra única.
-              Trabalhamos com MDF, MDP, madeira natural, lâminas, Pintura Laca e
-              fórmica de alta qualidade, criando móveis que unem sofisticação,
-              exclusividade e personalidade. Acreditamos que um ambiente bem
-              planejado vai além da estética: ele transmite estilo, acolhimento
-              e valor. Por isso, desenvolvemos soluções sob medida que traduzem
-              o desejo de cada cliente em móveis elegantes, funcionais e
-              atemporais. Nosso compromisso é entregar muito mais do que móveis
-              entregamos experiências únicas, com acabamentos impecáveis e
-              design que inspira.
+              Nossa história nasceu da paixão em transformar espaços em experiências. Mais do que fabricar móveis, acreditamos que cada projeto carrega memórias, estilos de vida e a identidade de quem habita o ambiente. Foi a partir dessa visão que fundamos nossa marcenaria: unir tradição artesanal, tecnologia de ponta e design exclusivo para criar móveis sob medida que dialogam com a essência de cada cliente. <br />
+
+              Ao longo do tempo, construímos mais do que ambientes, construímos relações de confiança. Cada detalhe, desde a escolha criteriosa dos materiais até o acabamento final, reflete nosso compromisso com excelência, sofisticação e autenticidade. <br />
+
+              Hoje, seguimos firmes com o mesmo propósito que nos move desde o início: entregar projetos que unem estética e funcionalidade, transformando sonhos em realidade com elegância e precisão. Porque acreditamos que cada espaço merece ser único, assim como cada história merece ser contada.
             </p>
           </div>
         </section>
