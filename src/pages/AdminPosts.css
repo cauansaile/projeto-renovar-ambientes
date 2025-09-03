@@ -1,0 +1,15 @@
+/* ... (código anterior mantido) ... */
+
+.storage-info {
+    margin-top: 2rem;
+    padding: 1rem;
+    background: #eff6ff;
+    border-radius: 8px;
+    text-align: center;
+    color: #1e40af;
+}
+
+.storage-info p {
+    margin: 0;
+    font-size: 0.875rem;
+}

@@ -1,163 +1,166 @@
-import React, { useState, useEffect } from "react";
-import "./blog.css";
-import NavBar from "../components/navbar";
+import React from 'react';
+import { useParams } from 'react-router-dom';
+import { FiCalendar, FiUser, FiTag, FiArrowLeft } from 'react-icons/fi';
+import { Link } from 'react-router-dom';
+import { usePosts } from '../hooks/usePosts';
+import './Blog.css';
 
-const RenovarBlog = () => {
-  const [posts, setPosts] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [navbarScrolled, setNavbarScrolled] = useState(false);
-  const API_URL = import.meta.env.VITE_API_URL;
+const BlogPost = () => {
+    const { slug } = useParams();
+    const { getPostBySlug } = usePosts();
+    
+    const post = getPostBySlug(slug);
 
-  useEffect(() => {
-    const handleScroll = () => {
-      setNavbarScrolled(window.scrollY > 100);
-    };
-
-    window.addEventListener("scroll", handleScroll);
-    loadPosts();
-
-    return () => {
-      window.removeEventListener("scroll", handleScroll);
-    };
-  }, []);
-
-  const loadPosts = async () => {
-    setLoading(true);
-    setError(null);
-
-    try {
-      const res = await fetch(`${API_URL}/posts`);
-      if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-
-      const postsData = await res.json();
-      setPosts(postsData);
-    } catch (err) {
-      console.error("Failed to fetch posts:", err);
-      setError(
-        "Não foi possível carregar os posts. Por favor, tente novamente."
-      );
-    } finally {
-      setLoading(false);
+    if (!post) {
+        return (
+            <div className="blog-container">
+                <div className="not-found">
+                    <h2>Post não encontrado</h2>
+                    <p>O post que você está procurando não existe ou foi removido.</p>
+                    <Link to="/blog" className="back-button">
+                        <FiArrowLeft size={16} />
+                        Voltar para o Blog
+                    </Link>
+                </div>
+            </div>
+        );
     }
-  };
 
-  const handlePostClick = (post) => {
-    const identifier = post.slug || post.id;
-    window.location.href = `/blog/${identifier}`;
-  };
+    // Formatar data para exibição
+    const formatDate = (dateString) => {
+        const options = { 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric',
+            timeZone: 'America/Sao_Paulo'
+        };
+        return new Date(dateString).toLocaleDateString('pt-BR', options);
+    };
 
-  return (
-    <>
-      <NavBar />
-      <div className="renovar-blog">
-        <HeroSection />
-        <PostsSection
-          posts={posts}
-          loading={loading}
-          error={error}
-          onRetry={loadPosts}
-          onPostClick={handlePostClick}
-        />
-      </div>
-    </>
-  );
-};
+    // Função para capitalizar a primeira letra
+    const capitalizeFirst = (str) => {
+        return str.charAt(0).toUpperCase() + str.slice(1);
+    };
 
-const HeroSection = () => {
-  return (
-    <section className="hero">
-      <div className="overlay">
-        <h1 className="title">Bem vindo ao Blog renovar</h1>
-        
-      </div>
-    </section>
-  );
-};
+    return (
+        <div className="blog-container">
+            {/* Botão Voltar */}
+            <div className="back-navigation">
+                <Link to="/blog" className="back-link">
+                    <FiArrowLeft size={18} />
+                    Voltar para todos os posts
+                </Link>
+            </div>
 
-const PostsSection = ({ posts, loading, error, onRetry, onPostClick }) => {
-  return (
-    <section className="posts-section">
-      <div className="section-title">
-        <h2>POSTAGENS RECENTES</h2>
-        <p>FIQUE ATUALIZADO COM NOSSOS ÚLTIMOS ARTIGOS E INSIGHTS</p>
-      </div>
+            <article className="blog-post">
+                {/* Imagem de Capa */}
+                {post.coverImage && (
+                    <div className="post-cover">
+                        <img 
+                            src={post.coverImage} 
+                            alt={post.title}
+                            loading="lazy"
+                        />
+                    </div>
+                )}
+                
+                {/* Cabeçalho do Post */}
+                <header className="post-header">
+                    <div className="post-meta">
+                        <span className="meta-item">
+                            <FiCalendar size={14} />
+                            {formatDate(post.createdAt)}
+                        </span>
+                        
+                        {post.category && (
+                            <span className="meta-item category-badge">
+                                <FiTag size={14} />
+                                {capitalizeFirst(post.category)}
+                            </span>
+                        )}
 
-      <main id="blog-posts">
-        {loading && <LoadingState />}
-        {error && <ErrorState error={error} onRetry={onRetry} />}
-        {!loading && !error && posts.length === 0 && <EmptyState />}
-        {!loading && !error && posts.length > 0 && (
-          <PostsGrid posts={posts} onPostClick={onPostClick} />
-        )}
-      </main>
-    </section>
-  );
-};
+                        {post.author && (
+                            <span className="meta-item">
+                                <FiUser size={14} />
+                                Por {post.author.name || 'Administrador'}
+                            </span>
+                        )}
+                    </div>
 
-const LoadingState = () => {
-  return <div className="loading"></div>;
-};
+                    <h1 className="post-title">{post.title}</h1>
+                    
+                    {post.excerpt && (
+                        <p className="post-excerpt">{post.excerpt}</p>
+                    )}
+                </header>
 
-const ErrorState = ({ error, onRetry }) => {
-  return (
-    <div className="empty-state">
-      <h3>Não foi possível carregar os posts</h3>
-      <p>{error}</p>
-      <button className="cta-button" onClick={onRetry}>
-        Tentar Novamente
-      </button>
-    </div>
-  );
-};
+                {/* Conteúdo do Post */}
+                <div className="post-content-wrapper">
+                    <div 
+                        className="post-content"
+                        dangerouslySetInnerHTML={{ 
+                            __html: post.content
+                                .replace(/\n/g, '<br/>')
+                                .replace(/<br\/><br\/>/g, '</p><p>')
+                        }}
+                    />
+                </div>
 
-const EmptyState = () => {
-  return (
-    <div className="empty-state">
-      <h3>Nenhum post ainda</h3>
-    </div>
-  );
-};
+                {/* Rodapé do Post */}
+                {(post.tags && post.tags.length > 0) && (
+                    <footer className="post-footer">
+                        <div className="tags-section">
+                            <h3 className="tags-title">
+                                <FiTag size={16} />
+                                Tags:
+                            </h3>
+                            <div className="tags-list">
+                                {post.tags.map((tag, index) => (
+                                    <span key={index} className="tag">
+                                        #{tag.trim()}
+                                    </span>
+                                ))}
+                            </div>
+                        </div>
+                    </footer>
+                )}
 
-const PostsGrid = ({ posts, onPostClick }) => {
-  return (
-    <div className="posts-grid">
-      {posts.reverse().map((post) => (
-        <PostCard key={post.id} post={post} onClick={() => onPostClick(post)} />
-      ))}
-    </div>
-  );
-};
+                {/* Navegação entre Posts */}
+                <div className="post-navigation">
+                    <Link to="/blog" className="nav-button">
+                        <FiArrowLeft size={16} />
+                        Ver todos os posts
+                    </Link>
+                    
+                    {post.category && (
+                        <Link 
+                            to={`/blog?category=${post.category}`} 
+                            className="nav-button"
+                        >
+                            Ver mais em {post.category}
+                            <FiArrowLeft size={16} className="rotate-180" />
+                        </Link>
+                    )}
+                </div>
+            </article>
 
-const PostCard = ({ post, onClick }) => {
-  return (
-    <div className="post" onClick={onClick}>
-      <img
-        src="https://placehold.co/600x400/000000/FFFFFF?text=POST"
-        alt={post.title}
-      />
-      <div className="post-content">
-        <h2>
-          {post.title.length > 25
-            ? post.title.substring(0, 25) + "..."
-            : post.title}
-        </h2>
-        <p>
-          {post.content.length > 50
-            ? post.content.substring(0, 50) + "..."
-            : post.content}
-        </p>
-        <div className="post-meta">
-          <span className="label">
-            {post.label.length > 25
-              ? post.label.substring(0, 25) + "..."
-              : post.label}
-          </span>
-          <span className="date">{post.date}</span>
+            {/* Newsletter ou Call-to-Action (opcional) */}
+            <div className="blog-cta">
+                <h3>Gostou do conteúdo?</h3>
+                <p>Inscreva-se para receber mais dicas sobre ambientes renovados</p>
+                <form className="newsletter-form">
+                    <input 
+                        type="email" 
+                        placeholder="Seu e-mail" 
+                        className="email-input"
+                    />
+                    <button type="submit" className="subscribe-btn">
+                        Inscrever
+                    </button>
+                </form>
+            </div>
         </div>
-      </div>
-    </div>
-  );
+    );
 };
 
-export default RenovarBlog;
+export default BlogPost;

@@ -1,0 +1,11 @@
+/* ... (código anterior mantido) ... */
+
+.storage-info {
+    margin-top: 0.5rem;
+    text-align: center;
+}
+
+.storage-info small {
+    color: #f59e0b;
+    font-style: italic;
+}
