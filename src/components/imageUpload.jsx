@@ -2,7 +2,7 @@ import React, { useRef, useState } from 'react';
 import { FiUpload, FiX, FiImage } from 'react-icons/fi';
 import './ImageUpload.css';
 
-const ImageUpload = ({ onImageChange, currentImage, label = "Imagem de Capa", postId }) => {
+const ImageUpload = ({ onImageChange, currentImage, label = "Imagem de Capa" }) => {
     const fileInputRef = useRef(null);
     const [preview, setPreview] = useState(currentImage || null);
     const [isDragging, setIsDragging] = useState(false);
