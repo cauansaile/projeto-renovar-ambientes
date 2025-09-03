@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom';
 import { FiCalendar, FiUser, FiTag, FiArrowLeft } from 'react-icons/fi';
 import { Link } from 'react-router-dom';
 import { usePosts } from '../hooks/usePosts';
-import './Blog.css';
+import './blog.css';
 
 const BlogPost = () => {
     const { slug } = useParams();
