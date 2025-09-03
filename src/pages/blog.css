@@ -31,7 +31,7 @@
 }
 
 .renovar-blog .hero .overlay {
-  background: url(../imagens/capa-blog.png) center center no-repeat;
+  background: blue;
   background-size: cover;
   color: rgb(0, 0, 0);
   padding: 4rem 2rem;
