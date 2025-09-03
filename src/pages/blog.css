@@ -130,7 +130,7 @@
   background: #ffffff;
   /*border: 4px solid #000000;*/
   overflow: hidden;
-  box-shadow: 8px 8px 0px #333333;
+  box-shadow: 2px 3px 10px #0000005e;
   transition: all 0.2s ease;
   cursor: pointer;
   position: relative;
@@ -140,7 +140,7 @@
 
 .renovar-blog .post:hover {
   transform: translate(-4px, -4px);
-  box-shadow: 12px 12px 0px #333333;
+  /*box-shadow: 12px 12px 0px #333333;*/
 }
 
 .renovar-blog .post img {
