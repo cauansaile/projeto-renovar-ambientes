@@ -40,6 +40,7 @@
   background: #000000;
   cursor: pointer;
   transition: all 0.3s ease;
+  box-shadow: 6px 6px 12px #0000006a;
 }
 
 .renovar-post .header:hover {
@@ -69,8 +70,7 @@
   background: #ffffff;
 
   padding: 3rem 2.5rem;
-  box-shadow: 
-      4px 4px 10px #00000068;
+  box-shadow: 6px 6px 12px #0000006f;
   transition: all 0.2s ease;
   position: relative;
 }
