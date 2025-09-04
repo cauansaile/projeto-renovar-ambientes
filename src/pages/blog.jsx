@@ -133,7 +133,7 @@ const PostCard = ({ post, onClick }) => {
   return (
     <div className="post" onClick={onClick}>
       <img
-        src="../imagens/capa-post.jpg"
+        src="https://cdn.pixabay.com/photo/2020/08/25/18/29/workplace-5517755_1280.jpg"
         alt={post.title}
       />
       <div className="post-content">
