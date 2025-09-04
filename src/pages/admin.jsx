@@ -23,9 +23,8 @@ const RenovarAdmin = () => {
     imagePosition: "full",
   });
 
-  const parseMarkdown = (content) => {
-    return content;
-  };
+  // Removida a função parseMarkdown desnecessária
+  // O ReactMarkdown já faz o parsing automaticamente
 
   useEffect(() => {
     const savedToken = localStorage.getItem("adminToken");
@@ -64,6 +63,7 @@ const RenovarAdmin = () => {
 
   const handleLogin = async (e) => {
     e.preventDefault();
+    setIsLoading(true);
 
     const formData = new FormData(e.target);
     const loginData = {
@@ -106,8 +106,11 @@ const RenovarAdmin = () => {
     } catch (error) {
       console.error("Login error:", error.message);
       showMessage(`Login failed: ${error.message}`, "error");
+    } finally {
+      setIsLoading(false);
     }
   };
+
   const handleLogout = () => {
     setToken(null);
     localStorage.removeItem("adminToken");
@@ -117,6 +120,7 @@ const RenovarAdmin = () => {
 
   const handleSubmitPost = async (e) => {
     e.preventDefault();
+    setIsLoading(true);
 
     try {
       let body;
@@ -138,7 +142,7 @@ const RenovarAdmin = () => {
           content: formData.content,
           label: formData.label,
           imagePosition: formData.imagePosition,
-          image: null, // explicitly set null
+          image: null,
         });
       }
 
@@ -153,7 +157,7 @@ const RenovarAdmin = () => {
         throw new Error(text || `HTTP error! status: ${res.status}`);
       }
 
-      const data = await res.json();
+
       showMessage("Post criado com sucesso!", "success");
       loadPosts();
 
@@ -168,6 +172,8 @@ const RenovarAdmin = () => {
     } catch (err) {
       console.error(err);
       showMessage(err.message || "Erro em criar post", "error");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -185,6 +191,7 @@ const RenovarAdmin = () => {
   };
 
   const handleEditPost = async (editedPost) => {
+    setIsLoading(true);
     const { id, title, content, label, imageFile } = editedPost;
     const fd = new FormData();
     fd.append("title", title);
@@ -195,7 +202,7 @@ const RenovarAdmin = () => {
     try {
       const res = await fetch(`${API_URL}/posts/${id}`, {
         method: "PUT",
-        headers: { Authorization: `Bearer ${token}` }, // no Content-Type for FormData
+        headers: { Authorization: `Bearer ${token}` },
         body: fd,
       });
 
@@ -214,10 +221,13 @@ const RenovarAdmin = () => {
     } catch (err) {
       console.error(err);
       showMessage("Error updating post: " + err.message, "error");
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const handleDeletePost = async (postId) => {
+    setIsLoading(true);
     try {
       const res = await fetch(`${API_URL}/posts/${postId}`, {
         method: "DELETE",
@@ -236,6 +246,8 @@ const RenovarAdmin = () => {
     } catch (error) {
       console.error("Delete error:", error);
       showMessage("FAILED TO DELETE POST. PLEASE TRY AGAIN.", "error");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -275,7 +287,6 @@ const RenovarAdmin = () => {
             onDeletePost={openModal}
             showMarkdownHelp={showMarkdownHelp}
             setShowMarkdownHelp={setShowMarkdownHelp}
-            parseMarkdown={parseMarkdown}
           />
         )}
 
@@ -284,7 +295,6 @@ const RenovarAdmin = () => {
             post={modal.data}
             onSave={handleEditPost}
             onClose={closeModal}
-            parseMarkdown={parseMarkdown}
           />
         )}
 
@@ -359,15 +369,10 @@ const AdminPanel = ({
   posts,
   onEditPost,
   onDeletePost,
-  parseMarkdown,
   showMarkdownHelp,
   setShowMarkdownHelp,
 }) => {
-  const [previewContent, setPreviewContent] = useState("");
-
-  useEffect(() => {
-    setPreviewContent(parseMarkdown(formData.content));
-  }, [formData.content, parseMarkdown]);
+  // Removido o estado previewContent desnecessário pois usamos ReactMarkdown diretamente
 
   return (
     <div className="form-card" id="postCard">
@@ -449,6 +454,37 @@ const AdminPanel = ({
               required
               disabled={isLoading}
             />
+          </div>
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="imageFile">Imagem (opcional)</label>
+          <div className="input-wrapper">
+            <input
+              id="imageFile"
+              name="imageFile"
+              type="file"
+              accept="image/*"
+              onChange={onFileChange}
+              disabled={isLoading}
+            />
+          </div>
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="imagePosition">Posição da Imagem</label>
+          <div className="input-wrapper">
+            <select
+              id="imagePosition"
+              name="imagePosition"
+              value={formData.imagePosition}
+              onChange={onInputChange}
+              disabled={isLoading}
+            >
+              <option value="full">Largura completa</option>
+              <option value="left">Esquerda</option>
+              <option value="right">Direita</option>
+            </select>
           </div>
         </div>
 
@@ -566,18 +602,13 @@ const PostsPreview = ({ posts, onEdit, onDelete }) => {
   );
 };
 
-const EditModal = ({ post, onSave, onClose, parseMarkdown }) => {
+const EditModal = ({ post, onSave, onClose }) => {
   const [editData, setEditData] = useState({
     title: post.title || "",
     content: post.content || "",
     label: post.label || "",
-    imageFile: null, // optional image
+    imageFile: null,
   });
-  const [previewContent, setPreviewContent] = useState("");
-
-  useEffect(() => {
-    setPreviewContent(parseMarkdown(editData.content));
-  }, [editData.content, parseMarkdown]);
 
   const handleInputChange = (e) => {
     const { name, value, files } = e.target;
@@ -589,7 +620,7 @@ const EditModal = ({ post, onSave, onClose, parseMarkdown }) => {
   };
 
   const handleSubmit = () => {
-    onSave({ id: post.id, ...editData }); // only include ID for the URL
+    onSave({ id: post.id, ...editData });
   };
 
   return (
@@ -620,10 +651,17 @@ const EditModal = ({ post, onSave, onClose, parseMarkdown }) => {
 
         <div className="form-group">
           <label>Preview</label>
-          <div
-            className="content-preview"
-            dangerouslySetInnerHTML={{ __html: previewContent }}
-          />
+          <div className="preview-container">
+            {editData.content ? (
+              <ReactMarkdown
+                children={editData.content}
+                remarkPlugins={[remarkGfm]}
+                rehypePlugins={[rehypeRaw]}
+              />
+            ) : (
+              <p className="preview-placeholder">Nenhum conteúdo para preview</p>
+            )}
+          </div>
         </div>
 
         <div className="form-group">
@@ -633,6 +671,17 @@ const EditModal = ({ post, onSave, onClose, parseMarkdown }) => {
             id="editLabel"
             name="label"
             value={editData.label}
+            onChange={handleInputChange}
+          />
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="editImageFile">Nova Imagem (opcional)</label>
+          <input
+            type="file"
+            id="editImageFile"
+            name="imageFile"
+            accept="image/*"
             onChange={handleInputChange}
           />
         </div>
