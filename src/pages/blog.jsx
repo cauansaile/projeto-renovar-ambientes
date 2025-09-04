@@ -2,20 +2,6 @@ import React, { useState, useEffect } from "react";
 import "./blog.css";
 import NavBar from "../components/navbar";
 
-const imagensPreCarregadas = [
-  "https://cdn.pixabay.com/photo/2015/01/08/18/26/man-593333_1280.jpg",
-  "https://cdn.pixabay.com/photo/2020/08/25/18/29/workplace-5517755_1280.jpg",
-  "https://cdn.pixabay.com/photo/2021/11/27/08/55/woodworking-6827533_1280.jpg",
-  "https://cdn.pixabay.com/photo/2016/12/30/07/59/kitchen-1940174_1280.jpg",
-  "https://cdn.pixabay.com/photo/2022/01/04/05/29/kitchen-6914223_1280.jpg"
-];
-
-// Função para obter uma imagem aleatória
-const obterImagemAleatoria = () => {
-  const indiceAleatorio = Math.floor(Math.random() * imagensPreCarregadas.length);
-  return imagensPreCarregadas[indiceAleatorio];
-};
-
 const RenovarBlog = () => {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -31,17 +17,10 @@ const RenovarBlog = () => {
     window.addEventListener("scroll", handleScroll);
     loadPosts();
 
-    // Pré-carregar imagens
-    imagensPreCarregadas.forEach(src => {
-      const img = new Image();
-      img.src = src;
-    });
-
     return () => {
       window.removeEventListener("scroll", handleScroll);
     };
   }, []);
-
 
   const loadPosts = async () => {
     setLoading(true);
@@ -150,50 +129,12 @@ const PostsGrid = ({ posts, onPostClick }) => {
   );
 };
 
-/*const PostCard = ({ post, onClick }) => {
+const PostCard = ({ post, onClick }) => {
   return (
     <div className="post" onClick={onClick}>
       <img
         src="https://cdn.pixabay.com/photo/2015/01/08/18/26/man-593333_1280.jpg"
         alt={post.title}
-      />
-      <div className="post-content">
-        <h2>
-          {post.title.length > 25
-            ? post.title.substring(0, 25) + "..."
-            : post.title}
-        </h2>
-        <p>
-          {post.content.length > 50
-            ? post.content.substring(0, 50) + "..."
-            : post.content}
-        </p>
-        <div className="post-meta">
-          <span className="label">
-            {post.label.length > 25
-              ? post.label.substring(0, 25) + "..."
-              : post.label}
-          </span>
-          <span className="date">{post.date}</span>
-        </div>
-      </div>
-    </div>
-  );
-};*/
-
-const PostCard = ({ post, onClick }) => {
-  // Gera uma imagem aleatória para cada post
-  const [imagemAleatoria] = useState(obterImagemAleatoria());
-
-  return (
-    <div className="post" onClick={onClick}>
-      <img
-        src={imagemAleatoria}
-        alt={post.title}
-        onError={(e) => {
-          // Fallback caso a imagem não carregue
-          e.target.src = "https://cdn.pixabay.com/photo/2015/01/08/18/26/man-593333_1280.jpg";
-        }}
       />
       <div className="post-content">
         <h2>

@@ -2,15 +2,23 @@ import React, { useState, useEffect } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeRaw from "rehype-raw";
-
 import "./admin.css";
+
+// Array com caminhos das imagens disponíveis
+const imagensDisponiveis = [
+  "https://cdn.pixabay.com/photo/2015/01/08/18/26/man-593333_1280.jpg",
+  "https://cdn.pixabay.com/photo/2020/08/25/18/29/workplace-5517755_1280.jpg",
+  "https://cdn.pixabay.com/photo/2021/11/27/08/55/woodworking-6827533_1280.jpg",
+  "https://cdn.pixabay.com/photo/2016/12/30/07/59/kitchen-1940174_1280.jpg",
+  "https://cdn.pixabay.com/photo/2022/01/04/05/29/kitchen-6914223_1280.jpg"
+];
 
 const RenovarAdmin = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [token, setToken] = useState(null);
   const [posts, setPosts] = useState([]);
   const [message, setMessage] = useState({ text: "", type: "" });
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading] = useState(false);
   const [showMarkdownHelp, setShowMarkdownHelp] = useState(false);
   const [modal, setModal] = useState({ isOpen: false, type: "", data: null });
   const API_URL = import.meta.env.VITE_API_URL;
@@ -21,6 +29,7 @@ const RenovarAdmin = () => {
     label: "",
     imageFile: null,
     imagePosition: "full",
+    selectedImage: "" // Nova propriedade para imagem selecionada
   });
 
   const parseMarkdown = (content) => {
@@ -48,17 +57,33 @@ const RenovarAdmin = () => {
   };
 
   const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    const { name, value, type, files } = e.target;
+    
+    if (type === "file") {
+      setFormData((prev) => ({
+        ...prev,
+        imageFile: files[0],
+        selectedImage: "" // Limpa seleção de imagem quando upload novo
+      }));
+    } else if (name === "selectedImage") {
+      setFormData((prev) => ({
+        ...prev,
+        selectedImage: value,
+        imageFile: null // Limpa arquivo quando seleciona imagem pré-existente
+      }));
+    } else {
+      setFormData((prev) => ({
+        ...prev,
+        [name]: value,
+      }));
+    }
   };
 
   const handleFileChange = (e) => {
     setFormData((prev) => ({
       ...prev,
       imageFile: e.target.files[0],
+      selectedImage: "" // Limpa seleção de imagem quando upload novo
     }));
   };
 
@@ -108,6 +133,7 @@ const RenovarAdmin = () => {
       showMessage(`Login failed: ${error.message}`, "error");
     }
   };
+
   const handleLogout = () => {
     setToken(null);
     localStorage.removeItem("adminToken");
@@ -130,6 +156,16 @@ const RenovarAdmin = () => {
         body.append("label", formData.label);
         body.append("image", formData.imageFile);
         body.append("imagePosition", formData.imagePosition);
+      } else if (formData.selectedImage) {
+        // Usar imagem pré-selecionada
+        headers["Content-Type"] = "application/json";
+        body = JSON.stringify({
+          title: formData.title,
+          content: formData.content,
+          label: formData.label,
+          imagePosition: formData.imagePosition,
+          image: formData.selectedImage // Envia o caminho da imagem selecionada
+        });
       } else {
         // Send as JSON if no file
         headers["Content-Type"] = "application/json";
@@ -153,7 +189,6 @@ const RenovarAdmin = () => {
         throw new Error(text || `HTTP error! status: ${res.status}`);
       }
 
-      const data = await res.json();
       showMessage("Post criado com sucesso!", "success");
       loadPosts();
 
@@ -164,6 +199,7 @@ const RenovarAdmin = () => {
         label: "",
         imageFile: null,
         imagePosition: "full",
+        selectedImage: ""
       });
     } catch (err) {
       console.error(err);
@@ -195,7 +231,7 @@ const RenovarAdmin = () => {
     try {
       const res = await fetch(`${API_URL}/posts/${id}`, {
         method: "PUT",
-        headers: { Authorization: `Bearer ${token}` }, // no Content-Type for FormData
+        headers: { Authorization: `Bearer ${token}` },
         body: fd,
       });
 
@@ -363,7 +399,7 @@ const AdminPanel = ({
   showMarkdownHelp,
   setShowMarkdownHelp,
 }) => {
-  const [previewContent, setPreviewContent] = useState("");
+  const [ setPreviewContent] = useState("");
 
   useEffect(() => {
     setPreviewContent(parseMarkdown(formData.content));
@@ -449,6 +485,90 @@ const AdminPanel = ({
               required
               disabled={isLoading}
             />
+          </div>
+        </div>
+
+        {/* NOVO: Campo para selecionar imagem pré-existente */}
+        <div className="form-group">
+          <label htmlFor="selectedImage">Escolher imagem do post</label>
+          <div className="input-wrapper">
+            <select
+              id="selectedImage"
+              name="selectedImage"
+              value={formData.selectedImage}
+              onChange={onInputChange}
+              disabled={isLoading}
+            >
+              <option value="">Selecione uma imagem...</option>
+              {imagensDisponiveis.map((imagem, index) => (
+                <option key={index} value={imagem}>
+                  Imagem {index + 1}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        {/* Preview da imagem selecionada */}
+        {formData.selectedImage && (
+          <div className="form-group">
+            <label>Preview da imagem:</label>
+            <div className="image-preview">
+              <img 
+                src={formData.selectedImage} 
+                alt="Preview" 
+                style={{ maxWidth: '100%', maxHeight: '200px', border: '2px solid #000' }}
+                onError={(e) => {
+                  e.target.style.display = 'none';
+                }}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Campo existente para upload de nova imagem */}
+        <div className="form-group">
+          <label htmlFor="imageFile">Ou fazer upload de nova imagem</label>
+          <div className="input-wrapper">
+            <input
+              id="imageFile"
+              name="imageFile"
+              type="file"
+              accept="image/*"
+              onChange={onFileChange}
+              disabled={isLoading}
+            />
+          </div>
+        </div>
+
+        {/* Preview do arquivo selecionado */}
+        {formData.imageFile && (
+          <div className="form-group">
+            <label>Preview do upload:</label>
+            <div className="image-preview">
+              <img 
+                src={URL.createObjectURL(formData.imageFile)} 
+                alt="Preview" 
+                style={{ maxWidth: '100%', maxHeight: '200px', border: '2px solid #000' }}
+              />
+            </div>
+          </div>
+        )}
+
+        <div className="form-group">
+          <label htmlFor="imagePosition">Posição da Imagem</label>
+          <div className="input-wrapper">
+            <select
+              id="imagePosition"
+              name="imagePosition"
+              value={formData.imagePosition}
+              onChange={onInputChange}
+              disabled={isLoading}
+            >
+              <option value="full">Largura completa</option>
+              <option value="left">Alinhada à esquerda</option>
+              <option value="right">Alinhada à direita</option>
+            </select>
           </div>
         </div>
 
@@ -548,6 +668,18 @@ const PostsPreview = ({ posts, onEdit, onDelete }) => {
               {post.content.substring(0, 35)}
               {post.content.length > 35 ? "..." : ""}
             </p>
+            {post.image && (
+              <div className="post-image-preview">
+                <img 
+                  src={post.image} 
+                  alt="Post" 
+                  style={{ maxWidth: '50px', maxHeight: '50px', marginRight: '10px' }}
+                  onError={(e) => {
+                    e.target.style.display = 'none';
+                  }}
+                />
+              </div>
+            )}
             <div className="post-actions">
               <button className="btn-edit" onClick={() => onEdit("edit", post)}>
                 Editar
@@ -571,7 +703,8 @@ const EditModal = ({ post, onSave, onClose, parseMarkdown }) => {
     title: post.title || "",
     content: post.content || "",
     label: post.label || "",
-    imageFile: null, // optional image
+    imageFile: null,
+    selectedImage: post.image || ""
   });
   const [previewContent, setPreviewContent] = useState("");
 
@@ -580,16 +713,27 @@ const EditModal = ({ post, onSave, onClose, parseMarkdown }) => {
   }, [editData.content, parseMarkdown]);
 
   const handleInputChange = (e) => {
-    const { name, value, files } = e.target;
-    if (name === "imageFile") {
-      setEditData((prev) => ({ ...prev, imageFile: files[0] }));
+    const { name, value, type, files } = e.target;
+    
+    if (type === "file") {
+      setEditData((prev) => ({ 
+        ...prev, 
+        imageFile: files[0],
+        selectedImage: "" 
+      }));
+    } else if (name === "selectedImage") {
+      setEditData((prev) => ({ 
+        ...prev, 
+        selectedImage: value,
+        imageFile: null 
+      }));
     } else {
       setEditData((prev) => ({ ...prev, [name]: value }));
     }
   };
 
   const handleSubmit = () => {
-    onSave({ id: post.id, ...editData }); // only include ID for the URL
+    onSave({ id: post.id, ...editData });
   };
 
   return (
@@ -633,6 +777,47 @@ const EditModal = ({ post, onSave, onClose, parseMarkdown }) => {
             id="editLabel"
             name="label"
             value={editData.label}
+            onChange={handleInputChange}
+          />
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="editSelectedImage">Imagem do Post</label>
+          <select
+            id="editSelectedImage"
+            name="selectedImage"
+            value={editData.selectedImage}
+            onChange={handleInputChange}
+          >
+            <option value="">Selecione uma imagem...</option>
+            {imagensDisponiveis.map((imagem, index) => (
+              <option key={index} value={imagem}>
+                Imagem {index + 1}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {editData.selectedImage && (
+          <div className="form-group">
+            <label>Preview da imagem:</label>
+            <div className="image-preview">
+              <img 
+                src={editData.selectedImage} 
+                alt="Preview" 
+                style={{ maxWidth: '100%', maxHeight: '200px', border: '2px solid #000' }}
+              />
+            </div>
+          </div>
+        )}
+
+        <div className="form-group">
+          <label htmlFor="editImageFile">Ou fazer upload de nova imagem</label>
+          <input
+            id="editImageFile"
+            name="imageFile"
+            type="file"
+            accept="image/*"
             onChange={handleInputChange}
           />
         </div>
