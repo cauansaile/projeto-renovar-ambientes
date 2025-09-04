@@ -153,7 +153,7 @@ const RenovarAdmin = () => {
         throw new Error(text || `HTTP error! status: ${res.status}`);
       }
 
-
+      
       showMessage("Post criado com sucesso!", "success");
       loadPosts();
 
