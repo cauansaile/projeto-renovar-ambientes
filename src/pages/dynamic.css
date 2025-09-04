@@ -70,7 +70,7 @@
 
   padding: 3rem 2.5rem;
   box-shadow: 
-      4px 4px 10px #00000068,
+      4px 4px 10px #00000068;
   transition: all 0.2s ease;
   position: relative;
 }
