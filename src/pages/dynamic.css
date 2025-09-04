@@ -18,14 +18,7 @@
 
 .renovar-post {
   font-family: "Cormorant", serif;
-  background: #000000;
-  background-image: 
-      linear-gradient(45deg, #111111 25%, transparent 25%), 
-      linear-gradient(-45deg, #111111 25%, transparent 25%), 
-      linear-gradient(45deg, transparent 75%, #111111 75%), 
-      linear-gradient(-45deg, transparent 75%, #111111 75%);
-  background-size: 20px 20px;
-  background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+  background: #fff;
   min-height: 100vh;
   display: flex;
   align-items: center;
@@ -43,7 +36,6 @@
 .renovar-post .header {
   text-align: center;
   margin-bottom: 3rem;
-  border: 3px solid #ffffff;
   padding: 1.5rem;
   background: #000000;
   cursor: pointer;
@@ -75,11 +67,10 @@
 
 .renovar-post .post-card {
   background: #ffffff;
-  border: 4px solid #000000;
+
   padding: 3rem 2.5rem;
   box-shadow: 
-      8px 8px 0px #333333,
-      12px 12px 0px #666666;
+      4px 4px 10px #00000068,
   transition: all 0.2s ease;
   position: relative;
 }

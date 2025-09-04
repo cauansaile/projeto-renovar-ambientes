@@ -136,6 +136,10 @@ const PostCard = ({ post, onClick }) => {
         src="https://cdn.pixabay.com/photo/2020/08/25/18/29/workplace-5517755_1280.jpg"
         alt={post.title}
       />
+      <img
+        src="https://cdn.pixabay.com/photo/2015/01/08/18/26/man-593333_1280.jpg"
+        alt={post.title}
+      />
       <div className="post-content">
         <h2>
           {post.title.length > 25
