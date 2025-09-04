@@ -10,7 +10,7 @@ const RenovarAdmin = () => {
   const [token, setToken] = useState(null);
   const [posts, setPosts] = useState([]);
   const [message, setMessage] = useState({ text: "", type: "" });
-  const [isLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [showMarkdownHelp, setShowMarkdownHelp] = useState(false);
   const [modal, setModal] = useState({ isOpen: false, type: "", data: null });
   const API_URL = import.meta.env.VITE_API_URL;
@@ -153,7 +153,7 @@ const RenovarAdmin = () => {
         throw new Error(text || `HTTP error! status: ${res.status}`);
       }
 
-      
+      const data = await res.json();
       showMessage("Post criado com sucesso!", "success");
       loadPosts();
 
@@ -353,6 +353,7 @@ const AdminPanel = ({
   onSubmitPost,
   formData,
   onInputChange,
+  onFileChange,
   isLoading,
   message,
   posts,
@@ -362,7 +363,7 @@ const AdminPanel = ({
   showMarkdownHelp,
   setShowMarkdownHelp,
 }) => {
-  const [ setPreviewContent] = useState("");
+  const [previewContent, setPreviewContent] = useState("");
 
   useEffect(() => {
     setPreviewContent(parseMarkdown(formData.content));
