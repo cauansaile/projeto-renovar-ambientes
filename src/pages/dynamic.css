@@ -75,11 +75,7 @@
   position: relative;
 }
 
-.renovar-post .post-card:hover {
-  box-shadow: 
-      10px 10px 0px #333333,
-      14px 14px 0px #666666;
-}
+
 
 .renovar-post .post-meta {
   display: flex;
