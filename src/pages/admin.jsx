@@ -228,6 +228,7 @@ const RenovarAdmin = () => {
   };
 
   const handleDeletePost = async (postId) => {
+    console.log("Tentando deletar post ID:", postId);
     try {
       const res = await fetch(`${API_URL}/posts/${postId}`, {
         method: "DELETE",
