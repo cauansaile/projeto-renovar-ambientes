@@ -6,6 +6,13 @@ import rehypeRaw from "rehype-raw";
 import "./admin.css";
 
 const RenovarAdmin = () => {
+  {modal.isOpen && modal.type === "delete" && (
+  <DeleteModal
+    post={modal.data}
+    onConfirm={handleDeletePost} // Passa a função diretamente
+    onClose={closeModal}
+  />
+)}
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [token, setToken] = useState(null);
   const [posts, setPosts] = useState([]);
@@ -226,27 +233,31 @@ const RenovarAdmin = () => {
     }
   };
 
-  const handleDeletePost = async (postId) => {
-    try {
-      const res = await fetch(`${API_URL}/posts/${postId}`, {
-        method: "DELETE",
-        headers: {
-          Authorization: "Bearer " + token,
-        },
-      });
+ const handleDeletePost = async (postId) => {
+  console.log("Deleting post with ID:", postId);
+  console.log("Using token:", token); 
+  try {
+    const res = await fetch(`${API_URL}/posts/${postId}`, {
+      method: "DELETE",
+      headers: {
+        Authorization: "Bearer " + token,
+        "Content-Type": "application/json", // Adicione este header
+      },
+    });
 
-      if (res.ok) {
-        await loadPosts();
-        setModal({ isOpen: false, type: "", data: null });
-        showMessage("POST DELETED SUCCESSFULLY!", "success");
-      } else {
-        showMessage("FAILED TO DELETE POST", "error");
-      }
-    } catch (error) {
-      console.error("Delete error:", error);
-      showMessage("FAILED TO DELETE POST. PLEASE TRY AGAIN.", "error");
+    if (res.ok) {
+      await loadPosts();
+      setModal({ isOpen: false, type: "", data: null });
+      showMessage("POST DELETED SUCCESSFULLY!", "success");
+    } else {
+      const errorData = await res.json();
+      showMessage(`FAILED TO DELETE POST: ${errorData.message || res.statusText}`, "error");
     }
-  };
+  } catch (error) {
+    console.error("Delete error:", error);
+    showMessage("FAILED TO DELETE POST. PLEASE TRY AGAIN.", "error");
+  }
+};
 
   const openModal = (type, data = null) => {
     setModal({ isOpen: true, type, data });
