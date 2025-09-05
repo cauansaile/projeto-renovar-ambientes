@@ -133,9 +133,10 @@ const PostCard = ({ post, onClick }) => {
   return (
     <div className="post" onClick={onClick}>
       <img
-        src="https://cdn.pixabay.com/photo/2020/08/25/18/29/workplace-5517755_1280.jpg"
+        src={post.image || "https://via.placeholder.com/400x250?text=Sem+Imagem"}
         alt={post.title}
       />
+
       
       <div className="post-content">
         <h2>
