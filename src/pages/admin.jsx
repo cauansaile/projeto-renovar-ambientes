@@ -233,9 +233,7 @@ const RenovarAdmin = () => {
     }
   };
 
- const handleDeletePost = async (postId) => {
-  console.log("Deleting post with ID:", postId);
-  console.log("Using token:", token); 
+  const handleDeletePost = async (postId) => {
   try {
     const res = await fetch(`${API_URL}/posts/${postId}`, {
       method: "DELETE",
