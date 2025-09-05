@@ -456,36 +456,7 @@ const AdminPanel = ({
           </div>
         </div>
 
-        <div className="form-group">
-          <label htmlFor="imageFile">Imagem (opcional)</label>
-          <div className="input-wrapper">
-            <input
-              id="imageFile"
-              name="imageFile"
-              type="file"
-              accept="image/*"
-              onChange={onFileChange}
-              disabled={isLoading}
-            />
-          </div>
-        </div>
-
-        <div className="form-group">
-          <label htmlFor="imagePosition">Posição da Imagem</label>
-          <div className="input-wrapper">
-            <select
-              id="imagePosition"
-              name="imagePosition"
-              value={formData.imagePosition}
-              onChange={onInputChange}
-              disabled={isLoading}
-            >
-              <option value="full">Largura completa</option>
-              <option value="left">Esquerda</option>
-              <option value="right">Direita</option>
-            </select>
-          </div>
-        </div>
+       
 
         <button
           type="submit"
