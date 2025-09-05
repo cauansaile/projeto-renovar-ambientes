@@ -227,7 +227,6 @@ const RenovarAdmin = () => {
   };
 
   const handleDeletePost = async (postId) => {
-    setIsLoading(true);
     try {
       const res = await fetch(`${API_URL}/posts/${postId}`, {
         method: "DELETE",
@@ -246,8 +245,6 @@ const RenovarAdmin = () => {
     } catch (error) {
       console.error("Delete error:", error);
       showMessage("FAILED TO DELETE POST. PLEASE TRY AGAIN.", "error");
-    } finally {
-      setIsLoading(false);
     }
   };
 
