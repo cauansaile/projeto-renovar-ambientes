@@ -4,11 +4,11 @@ import NavBar from "../components/navbar";
 
 // Array com caminhos das imagens pré-carregadas
 const imagensPreCarregadas = [
-  "/imagens/interior-1.jpg",
-  "/imagens/interior-2.jpg",
-  "/imagens/interior-3.jpg",
-  "/imagens/interior-4.jpg",
-  "/imagens/interior-5.jpg"
+  "https://cdn.pixabay.com/photo/2015/01/08/18/26/man-593333_1280.jpg",
+  "https://cdn.pixabay.com/photo/2020/08/25/18/29/workplace-5517755_1280.jpg",
+  "https://cdn.pixabay.com/photo/2021/11/27/08/55/woodworking-6827533_1280.jpg",
+  "https://cdn.pixabay.com/photo/2016/12/30/07/59/kitchen-1940174_1280.jpg",
+  "https://cdn.pixabay.com/photo/2022/01/04/05/29/kitchen-6914223_1280.jpg"
 ];
 
 // Função para obter uma imagem aleatória
