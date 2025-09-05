@@ -362,7 +362,6 @@ const AdminPanel = ({
   onSubmitPost,
   formData,
   onInputChange,
-  onFileChange,
   isLoading,
   message,
   posts,
