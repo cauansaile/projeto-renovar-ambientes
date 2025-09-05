@@ -2,341 +2,702 @@ import React, { useState, useEffect } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeRaw from "rehype-raw";
+
 import "./admin.css";
 
-
-
-const Admin = () => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+const RenovarAdmin = () => {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [token, setToken] = useState(null);
   const [posts, setPosts] = useState([]);
-  const [form, setForm] = useState({
+  const [message, setMessage] = useState({ text: "", type: "" });
+  const [isLoading, setIsLoading] = useState(false);
+  const [showMarkdownHelp, setShowMarkdownHelp] = useState(false);
+  const [modal, setModal] = useState({ isOpen: false, type: "", data: null });
+  const API_URL = import.meta.env.VITE_API_URL;
+
+  const [formData, setFormData] = useState({
     title: "",
     content: "",
     label: "",
-    file: null,
-    image: ""
+    imageFile: null,
+    imagePosition: "full",
   });
-  const [selectedPost, setSelectedPost] = useState(null);
-  const [modal, setModal] = useState({ type: "", post: null });
-  const [message, setMessage] = useState({ type: "", text: "" });
 
-  const API_URL = import.meta.env.VITE_API_URL;
-  const token = localStorage.getItem("token");
+  // Removida a função parseMarkdown desnecessária
+  // O ReactMarkdown já faz o parsing automaticamente
 
   useEffect(() => {
-    if (token) {
-      setIsAuthenticated(true);
+    const savedToken = localStorage.getItem("adminToken");
+    if (savedToken) {
+      setToken(savedToken);
+      setIsLoggedIn(true);
       loadPosts();
     }
-  }, []);
 
-  useEffect(() => {
     if (message.text) {
-      const timer = setTimeout(() => setMessage({ type: "", text: "" }), 5000);
+      const timer = setTimeout(() => {
+        setMessage({ text: "", type: "" });
+      }, 5000);
       return () => clearTimeout(timer);
     }
-  }, [message.text]);
+  }, [message]);
 
-  const loadPosts = async () => {
-    try {
-      const res = await fetch(`${API_URL}/posts`);
-      const data = await res.json();
-      setPosts(data);
-    } catch (err) {
-      console.error(err);
-      setMessage({ type: "error", text: "Erro ao criar post" });
-      
-    }
+  const showMessage = (text, type = "sucesso") => {
+    setMessage({ text, type });
+  };
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const handleFileChange = (e) => {
+    setFormData((prev) => ({
+      ...prev,
+      imageFile: e.target.files[0],
+    }));
   };
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    const username = e.target.username.value;
-    const password = e.target.password.value;
+    setIsLoading(true);
+
+    const formData = new FormData(e.target);
+    const loginData = {
+      username: formData.get("username"),
+      password: formData.get("password"),
+    };
 
     try {
-      const res = await fetch(`${API_URL}/login`, {
+      const response = await fetch(`${API_URL}/login`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(loginData),
       });
-      const data = await res.json();
 
-      if (data.token) {
-        localStorage.setItem("token", data.token);
-        setIsAuthenticated(true);
-        loadPosts();
-      } else {
-        setMessage({ type: "error", text: "Login falhou. Verifique suas credenciais." });
+      if (!response.ok) {
+        throw new Error(`Login falhou com status ${response.status}`);
       }
-    } catch {
-      setMessage({ type: "error", text: "Erro ao fazer login" });
+
+      const contentType = response.headers.get("content-type");
+      if (!contentType || !contentType.includes("application/json")) {
+        throw new Error("Server returned non-JSON response");
+      }
+
+      const text = await response.text();
+      if (!text.trim()) {
+        throw new Error("Server returned empty response");
+      }
+
+      const data = JSON.parse(text);
+      console.log("Login successful:", data);
+
+      // Store token and update state
+      localStorage.setItem("adminToken", data.token);
+      setToken(data.token);
+      setIsLoggedIn(true);
+      loadPosts();
+      showMessage("Login successful!", "success");
+    } catch (error) {
+      console.error("Login error:", error.message);
+      showMessage(`Login failed: ${error.message}`, "error");
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const handleLogout = () => {
-    localStorage.removeItem("token");
-    setIsAuthenticated(false);
+    setToken(null);
+    localStorage.removeItem("adminToken");
+    setIsLoggedIn(false);
     setPosts([]);
   };
 
-  const handleCreatePost = async (e) => {
+  const handleSubmitPost = async (e) => {
     e.preventDefault();
+    setIsLoading(true);
+
     try {
       let body;
       let headers = { Authorization: `Bearer ${token}` };
 
-      if (form.file) {
+      if (formData.imageFile) {
+        // Send as FormData if there's a file
         body = new FormData();
-        body.append("title", form.title);
-        body.append("content", form.content);
-        body.append("label", form.label);
-        body.append("file", form.file);
+        body.append("title", formData.title);
+        body.append("content", formData.content);
+        body.append("label", formData.label);
+        body.append("image", formData.imageFile);
+        body.append("imagePosition", formData.imagePosition);
       } else {
-        body = JSON.stringify({
-          title: form.title,
-          content: form.content,
-          label: form.label,
-          image: form.image
-        });
+        // Send as JSON if no file
         headers["Content-Type"] = "application/json";
+        body = JSON.stringify({
+          title: formData.title,
+          content: formData.content,
+          label: formData.label,
+          imagePosition: formData.imagePosition,
+          image: null,
+        });
       }
 
       const res = await fetch(`${API_URL}/posts`, {
         method: "POST",
         headers,
-        body
+        body,
       });
 
-      if (res.ok) {
-        setMessage({ type: "success", text: "Post criado com sucesso!" });
-        setForm({ title: "", content: "", label: "", file: null, image: "" });
-        loadPosts();
-      } else {
-        setMessage({ type: "error", text: "Erro ao criar post" });
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(text || `HTTP error! status: ${res.status}`);
       }
-    } catch {
-      setMessage({ type: "error", text: "Erro ao criar post" });
+
+
+      showMessage("Post criado com sucesso!", "success");
+      loadPosts();
+
+      // Clear form
+      setFormData({
+        title: "",
+        content: "",
+        label: "",
+        imageFile: null,
+        imagePosition: "full",
+      });
+    } catch (err) {
+      console.error(err);
+      showMessage(err.message || "Erro em criar post", "error");
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const handleEditPost = async (e) => {
-    e.preventDefault();
+  const loadPosts = async () => {
     try {
-      let body;
-      let headers = { Authorization: `Bearer ${token}` };
+      const res = await fetch(`${API_URL}/posts`);
+      if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
 
-      if (form.file) {
-        body = new FormData();
-        body.append("title", form.title);
-        body.append("content", form.content);
-        body.append("label", form.label);
-        body.append("file", form.file);
-      } else {
-        body = JSON.stringify({
-          title: form.title,
-          content: form.content,
-          label: form.label,
-          image: form.image
-        });
-        headers["Content-Type"] = "application/json";
-      }
+      const postsData = await res.json();
+      setPosts(postsData);
+    } catch (err) {
+      console.error("Falha ao carregar posts:", err);
+      setPosts([]);
+    }
+  };
 
-      const res = await fetch(`${API_URL}/posts/${selectedPost.id}`, {
+  const handleEditPost = async (editedPost) => {
+    setIsLoading(true);
+    const { id, title, content, label, imageFile } = editedPost;
+    const fd = new FormData();
+    fd.append("title", title);
+    fd.append("content", content);
+    fd.append("label", label);
+    if (imageFile) fd.append("image", imageFile);
+
+    try {
+      const res = await fetch(`${API_URL}/posts/${id}`, {
         method: "PUT",
-        headers,
-        body
-      });
-
-      if (res.ok) {
-        setMessage({ type: "success", text: "Post atualizado com sucesso!" });
-        setForm({ title: "", content: "", label: "", file: null, image: "" });
-        setSelectedPost(null);
-        setModal({ type: "", post: null });
-        loadPosts();
-      } else {
-        setMessage({ type: "error", text: "Erro ao atualizar post" });
-      }
-    } catch {
-      setMessage({ type: "error", text: "Erro ao atualizar post" });
-    }
-  };
-
-  const handleDeletePost = async () => {
-    try {
-      const res = await fetch(`${API_URL}/posts/${selectedPost.id}`, {
-        method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
+        body: fd,
       });
 
-      if (res.ok) {
-        setMessage({ type: "success", text: "Post excluído com sucesso!" });
-        setSelectedPost(null);
-        setModal({ type: "", post: null });
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(`Server error: ${text}`);
+      }
+
+      const data = await res.json();
+      if (data.success) {
+        showMessage("Post updated successfully!", "success");
         loadPosts();
       } else {
-        setMessage({ type: "error", text: "Erro ao excluir post" });
+        showMessage(data.error || "Failed to update post", "error");
       }
-    } catch {
-      setMessage({ type: "error", text: "Erro ao excluir post" });
+    } catch (err) {
+      console.error(err);
+      showMessage("Error updating post: " + err.message, "error");
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const openModal = (type, post) => {
-    setModal({ type, post });
-    setSelectedPost(post);
-    if (post) {
-      setForm({
-        title: post.title,
-        content: post.content,
-        label: post.label,
-        file: null,
-        image: post.image || ""
+  const handleDeletePost = async (postId) => {
+    setIsLoading(true);
+    try {
+      const res = await fetch(`${API_URL}/posts/${postId}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: "Bearer " + token,
+        },
       });
+
+      if (res.ok) {
+        await loadPosts();
+        setModal({ isOpen: false, type: "", data: null });
+        showMessage("POST DELETED SUCCESSFULLY!", "success");
+      } else {
+        showMessage("FAILED TO DELETE POST", "error");
+      }
+    } catch (error) {
+      console.error("Delete error:", error);
+      showMessage("FAILED TO DELETE POST. PLEASE TRY AGAIN.", "error");
+    } finally {
+      setIsLoading(false);
     }
+  };
+
+  const openModal = (type, data = null) => {
+    setModal({ isOpen: true, type, data });
+  };
+
+  const closeModal = () => {
+    setModal({ isOpen: false, type: "", data: null });
   };
 
   return (
-    <div className="admin">
-      <h1>Painel Administrativo</h1>
+    <div className="renovar-admin">
+      <div className="admin-container">
+        <div className="header">
+          <h1>RENOVAR</h1>
+          <p>ADMIN DASHBOARD</p>
+        </div>
 
-      {message.text && (
-        <div className={`message ${message.type}`}>{message.text}</div>
-      )}
+        {!isLoggedIn ? (
+          <LoginForm
+            onSubmit={handleLogin}
+            isLoading={isLoading}
+            message={message}
+          />
+        ) : (
+          <AdminPanel
+            onLogout={handleLogout}
+            onSubmitPost={handleSubmitPost}
+            formData={formData}
+            onInputChange={handleInputChange}
+            onFileChange={handleFileChange}
+            isLoading={isLoading}
+            message={message}
+            posts={posts}
+            onEditPost={openModal}
+            onDeletePost={openModal}
+            showMarkdownHelp={showMarkdownHelp}
+            setShowMarkdownHelp={setShowMarkdownHelp}
+          />
+        )}
 
-      {!isAuthenticated ? (
-        <LoginForm onLogin={handleLogin} />
-      ) : (
-        <AdminPanel
-          posts={posts}
-          form={form}
-          setForm={setForm}
-          handleLogout={handleLogout}
-          handleCreatePost={handleCreatePost}
-          openModal={openModal}
-        />
-      )}
+        {modal.isOpen && modal.type === "edit" && (
+          <EditModal
+            post={modal.data}
+            onSave={handleEditPost}
+            onClose={closeModal}
+          />
+        )}
 
-      {modal.type === "edit" && (
-        <EditModal
-          form={form}
-          setForm={setForm}
-          handleEditPost={handleEditPost}
-          closeModal={() => setModal({ type: "", post: null })}
-        />
-      )}
-
-      {modal.type === "delete" && (
-        <DeleteModal
-          handleDeletePost={handleDeletePost}
-          closeModal={() => setModal({ type: "", post: null })}
-        />
-      )}
+        {modal.isOpen && modal.type === "delete" && (
+          <DeleteModal
+            post={modal.data}
+            onConfirm={handleDeletePost}
+            onClose={closeModal}
+          />
+        )}
+      </div>
     </div>
   );
 };
 
-const LoginForm = ({ onLogin }) => (
-  <form onSubmit={onLogin}>
-    <input type="text" name="username" placeholder="Usuário" required />
-    <input type="password" name="password" placeholder="Senha" required />
-    <button type="submit">Entrar</button>
-  </form>
-);
-
-const AdminPanel = ({ posts, form, setForm, handleLogout, handleCreatePost, openModal }) => (
-  <div>
-    <button onClick={handleLogout} className="logout">Sair</button>
-
-    <form onSubmit={handleCreatePost}>
-      <input
-        type="text"
-        placeholder="Título"
-        value={form.title}
-        onChange={(e) => setForm({ ...form, title: e.target.value })}
-        required
-      />
-      <textarea
-        placeholder="Conteúdo"
-        value={form.content}
-        onChange={(e) => setForm({ ...form, content: e.target.value })}
-        required
-      />
-      <input
-        type="text"
-        placeholder="Label"
-        value={form.label}
-        onChange={(e) => setForm({ ...form, label: e.target.value })}
-        required
-      />
-
-      {/* seletor de imagens pré-carregadas */}
-      
-
-      {/* upload opcional */}
-      
-
-      <button type="submit">Criar Post</button>
-    </form>
-
-    <PostsPreview posts={posts} onEdit={(post) => openModal("edit", post)} onDelete={(post) => openModal("delete", post)} />
-  </div>
-);
-
-const PostsPreview = ({ posts, onEdit, onDelete }) => (
-  <div className="posts-preview">
-    {posts.map((post) => (
-      <div key={post.id} className="post-preview">
-        <h3>{post.title}</h3>
-        <div className="content-preview">
-          <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
-            {post.content}
-          </ReactMarkdown>
+const LoginForm = ({ onSubmit, isLoading, message }) => {
+  return (
+    <div className="form-card" id="loginCard">
+      <h2>Bem-vindo de volta</h2>
+      {message.text && (
+        <div className={`${message.type}-message`}>{message.text}</div>
+      )}
+      <form onSubmit={onSubmit}>
+        <div className="form-group">
+          <label htmlFor="username">Nome de Usuário</label>
+          <div className="input-wrapper">
+            <input
+              id="username"
+              name="username"
+              type="text"
+              placeholder="Enter your username"
+              required
+              disabled={isLoading}
+            />
+          </div>
         </div>
-        {post.image && <img src={post.image} alt={post.title} width="100" />}
-        <span>{post.label}</span>
-        <button onClick={() => onEdit(post)}>Editar</button>
-        <button onClick={() => onDelete(post)}>Excluir</button>
+
+        <div className="form-group">
+          <label htmlFor="password">Senha</label>
+          <div className="input-wrapper">
+            <input
+              id="password"
+              name="password"
+              type="password"
+              placeholder="Enter your password"
+              required
+              disabled={isLoading}
+            />
+          </div>
+        </div>
+
+        <button
+          type="submit"
+          className={`btn ${isLoading ? "loading" : ""}`}
+          disabled={isLoading}
+        >
+          {isLoading ? "Por favor, aguarde..." : "Entrar"}
+        </button>
+      </form>
+    </div>
+  );
+};
+
+const AdminPanel = ({
+  onLogout,
+  onSubmitPost,
+  formData,
+  onInputChange,
+  onFileChange,
+  isLoading,
+  message,
+  posts,
+  onEditPost,
+  onDeletePost,
+  showMarkdownHelp,
+  setShowMarkdownHelp,
+}) => {
+  // Removido o estado previewContent desnecessário pois usamos ReactMarkdown diretamente
+
+  return (
+    <div className="form-card" id="postCard">
+      <button
+        onClick={() => (window.location.href = "/blog")}
+        className="logout-btn"
+      >
+        ← Voltar para o Blog
+      </button>
+      <button
+        onClick={onLogout}
+        className="logout-btn"
+        style={{ left: "auto", right: "2rem" }}
+      >
+        Sair
+      </button>
+
+      <h2>Criar Novo Post</h2>
+
+      {message.text && (
+        <div className={`${message.type}-message`}>{message.text}</div>
+      )}
+
+      <form onSubmit={onSubmitPost}>
+        <div className="form-group">
+          <label htmlFor="title">Título do Post</label>
+          <div className="input-wrapper">
+            <input
+              id="title"
+              name="title"
+              type="text"
+              placeholder="Enter an engaging title"
+              value={formData.title}
+              onChange={onInputChange}
+              required
+              disabled={isLoading}
+            />
+          </div>
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="content">Conteúdo do Post</label>
+          <div className="input-wrapper">
+            <textarea
+              id="content"
+              name="content"
+              placeholder="Write your post content here... Use # for headings, ** for bold, etc."
+              value={formData.content}
+              onChange={onInputChange}
+              required
+              disabled={isLoading}
+              rows="6"
+            />
+          </div>
+        </div>
+
+        <div className="preview-container">
+          {formData.content ? (
+            <ReactMarkdown
+              children={formData.content}
+              remarkPlugins={[remarkGfm]}
+              rehypePlugins={[rehypeRaw]}
+            />
+          ) : (
+            <p className="preview-placeholder">Preview vai aparacer aqui</p>
+          )}
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="label">Categoria</label>
+          <div className="input-wrapper">
+            <input
+              id="label"
+              name="label"
+              type="text"
+              placeholder="e.g., Tech, Tutorial, News"
+              value={formData.label}
+              onChange={onInputChange}
+              required
+              disabled={isLoading}
+            />
+          </div>
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="imageFile">Imagem (opcional)</label>
+          <div className="input-wrapper">
+            <input
+              id="imageFile"
+              name="imageFile"
+              type="file"
+              accept="image/*"
+              onChange={onFileChange}
+              disabled={isLoading}
+            />
+          </div>
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="imagePosition">Posição da Imagem</label>
+          <div className="input-wrapper">
+            <select
+              id="imagePosition"
+              name="imagePosition"
+              value={formData.imagePosition}
+              onChange={onInputChange}
+              disabled={isLoading}
+            >
+              <option value="full">Largura completa</option>
+              <option value="left">Esquerda</option>
+              <option value="right">Direita</option>
+            </select>
+          </div>
+        </div>
+
+        <button
+          type="submit"
+          className={`btn ${isLoading ? "loading" : ""}`}
+          disabled={isLoading}
+        >
+          {isLoading ? "PUBLISHING..." : "PUBLISH POST"}
+        </button>
+      </form>
+
+      <button
+        type="button"
+        className="btn-secondary"
+        onClick={() => setShowMarkdownHelp(!showMarkdownHelp)}
+        style={{ marginTop: "10px" }}
+      >
+        Ajuda com Markdown
+      </button>
+
+      {showMarkdownHelp && (
+        <div className="markdown-help">
+          <h4>Ajuda com Markdown</h4>
+          <ul>
+            <li>
+              <strong># Título 1</strong> →{" "}
+              <h1 style={{ display: "inline", fontSize: "1rem" }}>Título 1</h1>
+            </li>
+            <li>
+              <strong>## Título 2</strong> →{" "}
+              <h2 style={{ display: "inline", fontSize: "0.9rem" }}>
+                Título 2
+              </h2>
+            </li>
+            <li>
+              <strong>**Negrito**</strong> → <strong>Negrito</strong>
+            </li>
+            <li>
+              <strong>*Itálico*</strong> → <em>Itálico</em>
+            </li>
+            <li>
+              <strong>[Link](url)</strong> →{" "}
+              <a href="#markdown" style={{ color: "#0000EE" }}>
+                Link
+              </a>
+            </li>
+            <li>
+              <strong>* Lista item</strong> → • Lista item
+            </li>
+            <li>
+              <strong>1. Itens ordenados</strong> → 1. Item 1
+            </li>
+            <li>
+              <strong>`Código`</strong> → <code>Código</code>
+            </li>
+            <li>
+              <strong>&gt; Blockquote</strong> →{" "}
+              <blockquote
+                style={{ display: "inline", margin: 0, paddingLeft: "0.5rem" }}
+              >
+                Blockquote
+              </blockquote>
+            </li>
+          </ul>
+        </div>
+      )}
+      <PostsPreview posts={posts} onEdit={onEditPost} onDelete={onDeletePost} />
+    </div>
+  );
+};
+
+const PostsPreview = ({ posts, onEdit, onDelete }) => {
+  if (!posts.length) return null;
+
+  return (
+    <div id="postsPreview" className="posts-preview">
+      <h3>Posts recentes</h3>
+      <div id="recentPosts">
+        {posts.map((post) => (
+          <div key={post.id} className="post-item">
+            <div className="post-header">
+              <strong>
+                {post.title.length > 20
+                  ? post.title.substring(0, 20) + "..."
+                  : post.title}
+              </strong>
+              {post.label && (
+                <span className="post-label">
+                  {post.label.length > 10
+                    ? post.label.substring(0, 10) + "..."
+                    : post.label}
+                </span>
+              )}
+            </div>
+            <p>
+              {post.content.substring(0, 35)}
+              {post.content.length > 35 ? "..." : ""}
+            </p>
+            <div className="post-actions">
+              <button className="btn-edit" onClick={() => onEdit("edit", post)}>
+                Editar
+              </button>
+              <button
+                className="btn-delete"
+                onClick={() => onDelete("delete", post)}
+              >
+                Deletar
+              </button>
+            </div>
+          </div>
+        ))}
       </div>
-    ))}
-  </div>
-);
+    </div>
+  );
+};
 
-const EditModal = ({ form, setForm, handleEditPost, closeModal }) => (
-  <div className="modal">
-    <form onSubmit={handleEditPost}>
-      <input
-        type="text"
-        placeholder="Título"
-        value={form.title}
-        onChange={(e) => setForm({ ...form, title: e.target.value })}
-        required
-      />
-      <textarea
-        placeholder="Conteúdo"
-        value={form.content}
-        onChange={(e) => setForm({ ...form, content: e.target.value })}
-        required
-      />
-      <input
-        type="text"
-        placeholder="Label"
-        value={form.label}
-        onChange={(e) => setForm({ ...form, label: e.target.value })}
-        required
-      />
+const EditModal = ({ post, onSave, onClose }) => {
+  const [editData, setEditData] = useState({
+    title: post.title || "",
+    content: post.content || "",
+    label: post.label || "",
+    imageFile: null,
+  });
 
-      {/* seletor de imagens pré-carregadas */}
-      
+  const handleInputChange = (e) => {
+    const { name, value, files } = e.target;
+    if (name === "imageFile") {
+      setEditData((prev) => ({ ...prev, imageFile: files[0] }));
+    } else {
+      setEditData((prev) => ({ ...prev, [name]: value }));
+    }
+  };
 
-      {/* upload opcional */}
-      
+  const handleSubmit = () => {
+    onSave({ id: post.id, ...editData });
+  };
 
-      <button type="submit">Salvar Alterações</button>
-      <button type="button" onClick={closeModal}>Cancelar</button>
-    </form>
-  </div>
-);
+  return (
+    <div className="custom-modal active">
+      <div className="modal-content">
+        <h3>Editar post</h3>
+        <div className="form-group">
+          <label htmlFor="editTitle">Título</label>
+          <input
+            type="text"
+            id="editTitle"
+            name="title"
+            value={editData.title}
+            onChange={handleInputChange}
+          />
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="editContent">Conteúdo</label>
+          <textarea
+            id="editContent"
+            name="content"
+            value={editData.content}
+            onChange={handleInputChange}
+            rows="6"
+          />
+        </div>
+
+        <div className="form-group">
+          <label>Preview</label>
+          <div className="preview-container">
+            {editData.content ? (
+              <ReactMarkdown
+                children={editData.content}
+                remarkPlugins={[remarkGfm]}
+                rehypePlugins={[rehypeRaw]}
+              />
+            ) : (
+              <p className="preview-placeholder">Nenhum conteúdo para preview</p>
+            )}
+          </div>
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="editLabel">Categoria</label>
+          <input
+            type="text"
+            id="editLabel"
+            name="label"
+            value={editData.label}
+            onChange={handleInputChange}
+          />
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="editImageFile">Nova Imagem (opcional)</label>
+          <input
+            type="file"
+            id="editImageFile"
+            name="imageFile"
+            accept="image/*"
+            onChange={handleInputChange}
+          />
+        </div>
+
+        <div className="modal-buttons">
+          <button className="btn-secondary" onClick={onClose}>
+            Cancelar
+          </button>
+          <button className="btn-primary" onClick={handleSubmit}>
+            Salvar alterações
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const DeleteModal = ({ post, onConfirm, onClose }) => {
   return (
@@ -357,4 +718,4 @@ const DeleteModal = ({ post, onConfirm, onClose }) => {
   );
 };
 
-export default Admin;
+export default RenovarAdmin;
