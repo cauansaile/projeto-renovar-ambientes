@@ -2,6 +2,21 @@ import React, { useState, useEffect } from "react";
 import "./blog.css";
 import NavBar from "../components/navbar";
 
+// Array com caminhos das imagens pré-carregadas
+const imagensPreCarregadas = [
+  "/imagens/interior-1.jpg",
+  "/imagens/interior-2.jpg",
+  "/imagens/interior-3.jpg",
+  "/imagens/interior-4.jpg",
+  "/imagens/interior-5.jpg"
+];
+
+// Função para obter uma imagem aleatória
+const obterImagemAleatoria = () => {
+  const indiceAleatorio = Math.floor(Math.random() * imagensPreCarregadas.length);
+  return imagensPreCarregadas[indiceAleatorio];
+};
+
 const RenovarBlog = () => {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -16,6 +31,12 @@ const RenovarBlog = () => {
 
     window.addEventListener("scroll", handleScroll);
     loadPosts();
+
+    // Pré-carregar imagens
+    imagensPreCarregadas.forEach(src => {
+      const img = new Image();
+      img.src = src;
+    });
 
     return () => {
       window.removeEventListener("scroll", handleScroll);
@@ -69,7 +90,6 @@ const HeroSection = () => {
     <section className="hero">
       <div className="overlay">
         <h1 className="title">Bem vindo ao Blog renovar</h1>
-        
       </div>
     </section>
   );
@@ -130,14 +150,23 @@ const PostsGrid = ({ posts, onPostClick }) => {
 };
 
 const PostCard = ({ post, onClick }) => {
+  const [imagemSrc, setImagemSrc] = useState("");
+
+  useEffect(() => {
+    // Gera uma imagem aleatória quando o componente é montado
+    setImagemSrc(obterImagemAleatoria());
+  }, []);
+
   return (
     <div className="post" onClick={onClick}>
       <img
-        src={post.image || "https://via.placeholder.com/400x250?text=Sem+Imagem"}
+        src={imagemSrc}
         alt={post.title}
+        onError={(e) => {
+          // Fallback caso a imagem não carregue
+          e.target.src = "https://cdn.pixabay.com/photo/2015/01/08/18/26/man-593333_1280.jpg";
+        }}
       />
-
-      
       <div className="post-content">
         <h2>
           {post.title.length > 25
